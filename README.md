@@ -1,4 +1,4 @@
-Tokbox Golang [![GoDoc](http://godoc.org/github.com/pjebs/tokbox?status.svg)](http://godoc.org/github.com/pjebs/tokbox)
+Tokbox Golang [![GoDoc](http://godoc.org/github.com/aogz/tokbox?status.svg)](http://godoc.org/github.com/aogz/tokbox)
 =============
 
 This Library is for creating sessions and tokens for the Tokbox Video, Voice & Messaging Platform.
@@ -11,20 +11,20 @@ Install
 -------
 
 ```shell
-go get -u github.com/pjebs/tokbox
+go get -u github.com/aogz/tokbox
 ```
 
 Usage
 -----
 
 ```go
-import "github.com/pjebs/tokbox"
+import "github.com/aogz/tokbox"
 
 //setup the api to use your credentials
 tb := tokbox.New("<my api key>","<my secret key>")
 
 //create a session
-session, err := tb.NewSession("", tokbox.P2P) //no location, peer2peer enabled
+session, err := tb.NewSession("", tokbox.P2P, tokbox.AlwaysArchive) //no location, peer2peer enabled, auto-archiving enabled
 
 //create a token
 token, err := session.Token(tokbox.Publisher, "", tokbox.Hours24) //type publisher, no connection data, expire in 24 hours
@@ -39,6 +39,7 @@ See the unit test for a more detailed example.
 Settings
 ----------
 
+**MediaMode** is the second argument in `NewSession` method.
 ```go
 type MediaMode string
 
@@ -56,9 +57,24 @@ const (
 
 ```
 
-**MediaMode** is the second argument in `NewSession` method.
+**ArchiveMode** is the third argument in `NewSession` method.
+```go
+type ArchiveMode string
 
+const (
+	/**
+	 * The session will be manually archived (default option).
+	 */
+	 ManualArchive ArchiveMode = "manual"
+	 /**
+	 * The session will be automatically archived.
+	 */
+	 AlwaysArchive = "always"
+)
 
+```
+
+**Role** is the first argument in `Token` method.
 ```go
 type Role string
 
@@ -81,8 +97,7 @@ const (
 
 ```
 
-**Role** is the first argument in `Token` method.
-
+**Expiration** value forms the third argument in `Token` method. It dictates how long a token is valid for. The unit is in (seconds) up to a maximum of 30 days.
 ```go
 const (
 	Days30  = 2592000 //30 * 24 * 60 * 60
@@ -93,8 +108,6 @@ const (
 )
 
 ```
-
-**Expiration** value forms the third argument in `Token` method. It dictates how long a token is valid for. The unit is in (seconds) up to a maximum of 30 days.
 
 
 Methods

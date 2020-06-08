@@ -2,7 +2,6 @@ package tokbox
 
 import (
 	"bytes"
-
 	"net/http"
 	"net/url"
 
@@ -50,6 +49,19 @@ const (
 	* due to firewall restrictions, the session uses the OpenTok TURN server to relay streams.
 	 */
 	P2P = "enabled"
+)
+
+type ArchiveMode string
+
+const (
+	/**
+	 * The session will be manually archived (default option).
+	 */
+	 ManualArchive ArchiveMode = "manual"
+	 /**
+	 * The session will be automatically archived.
+	  */
+	 AlwaysArchive = "always"
 )
 
 type Role string
@@ -112,9 +124,9 @@ func (t *Tokbox) jwtToken() (string, error) {
 }
 
 // Creates a new tokbox session or returns an error.
-// See README file for full documentation: https://github.com/pjebs/tokbox
+// See README file for full documentation: https://github.com/aogz/tokbox
 // NOTE: ctx must be nil if *not* using Google App Engine
-func (t *Tokbox) NewSession(location string, mm MediaMode, ctx ...context.Context) (*Session, error) {
+func (t *Tokbox) NewSession(location string, mm MediaMode, am ArchiveMode, ctx ...context.Context) (*Session, error) {
 	params := url.Values{}
 
 	if len(location) > 0 {
@@ -122,6 +134,7 @@ func (t *Tokbox) NewSession(location string, mm MediaMode, ctx ...context.Contex
 	}
 
 	params.Add("p2p.preference", string(mm))
+	params.Add("archiveMode", string(am))
 
 	var endpoint string
 	if t.BetaUrl == "" {
