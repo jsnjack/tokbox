@@ -1,7 +1,7 @@
-Tokbox Golang [![GoDoc](http://godoc.org/github.com/aogz/tokbox?status.svg)](http://godoc.org/github.com/aogz/tokbox)
+Tokbox Golang (Archiving enabled) [![GoDoc](http://godoc.org/github.com/aogz/tokbox?status.svg)](http://godoc.org/github.com/aogz/tokbox)
 =============
 
-This Library is for creating sessions and tokens for the Tokbox Video, Voice & Messaging Platform.
+This Library is for creating sessions, tokens and archives for the Tokbox Video, Voice & Messaging Platform.
 [See Tokbox website](https://tokbox.com/)
 
 It is a hybrid library (supports **Google App Engine** and **Stand-Alone** binary).
