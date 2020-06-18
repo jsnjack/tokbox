@@ -113,7 +113,7 @@ const (
 Methods
 ----------
 
-	func (t *Tokbox) NewSession(location string, mm MediaMode) (*Session, error)
+	func (t *Tokbox) NewSession(location string, mm MediaMode, am ArchiveMode) (*Session, error)
 
 Creates a new session or returns an error. A session represents a 'virtual chat room' where participants can 'sit in' and communicate with one another. A session can not be deregistered. If you no longer require the session, just discard it's details.
 
@@ -126,6 +126,12 @@ The *location* setting is optional, and generally you should keep it as `"".` Th
 `P2P` will direct clients to transfer video-audio data between each other directly (if possible).
 
 `MediaRouter` directs data to go through Tokbox's Media Router servers. Integrates **Intelligent Quality Control** technology to improve user-experience (albeit at higher pricing). ([Tokbox - REST API reference](https://tokbox.com/opentok/api/#session_id_production))
+
+*am ArchiveMode*
+
+`ManualArchive` will disable archiving be default. In case you want to enable it for current session, you need to enable it manually.
+
+`AlwaysArchive` will enable archiving for current session by default. Automatic archives stop 60 seconds after the last client disconnects from the session or 60 minutes after the last client stops publishing a stream to the session.
 
 
 	func (s *Session) Token(role Role, connectionData string, expiration int64) (string, error)
