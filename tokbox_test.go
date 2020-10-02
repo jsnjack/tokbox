@@ -12,7 +12,7 @@ const secret = "<your partner secret here>"
 
 func TestToken(t *testing.T) {
 	tokbox := New(key, secret)
-	session, err := tokbox.NewSession("", P2P)
+	session, err := tokbox.NewSession("", P2P, ManualArchive)
 	if err != nil {
 		log.Fatal(err)
 		t.FailNow()
