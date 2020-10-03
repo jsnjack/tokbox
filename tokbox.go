@@ -86,6 +86,24 @@ type Session struct {
 	T              *Tokbox `json:"-"`
 }
 
+// Archive struct represents archive create response
+type Archive struct {
+	CreatedAt  int    `json:"createdAt"`
+	Duration   int    `json:"duration"`
+	HasAudio   bool   `json:"hasAudio"`
+	HasVideo   bool   `json:"hasVideo"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	OutputMode string `json:"outputMode"`
+	ProjectID  int    `json:"projectId"`
+	Reason     string `json:"reason"`
+	Resolution string `json:"resolution"`
+	SessionID  string `json:"sessionId"`
+	Size       int    `json:"side"`
+	Status     string `json:"status"`
+	URL        string `json:"url"`
+}
+
 // New creates a new tokbox instance
 func New(apikey, partnerSecret string) *Tokbox {
 	return &Tokbox{apikey, partnerSecret, ""}
@@ -172,7 +190,9 @@ func (t *Tokbox) NewSession(location string, mm MediaMode, am ArchiveMode, ctx .
 }
 
 // StartArchiving starts archiving session
-func (s *Session) StartArchiving(archiveVideo bool, archiveAudio bool, ctx ...context.Context) (string, error) {
+func (s *Session) StartArchiving(archiveVideo bool, archiveAudio bool, ctx ...context.Context) (Archive, error) {
+	var archive Archive
+
 	values := map[string]interface{}{
 		"sessionId": s.SessionID,
 		"hasAudio":  archiveAudio,
@@ -183,13 +203,13 @@ func (s *Session) StartArchiving(archiveVideo bool, archiveAudio bool, ctx ...co
 	url := fmt.Sprintf(apiHost+apiStartArchivingURL, s.T.apiKey)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return "", err
+		return archive, err
 	}
 
 	//Create jwt token
 	jwt, err := s.T.jwtToken()
 	if err != nil {
-		return "", err
+		return archive, err
 	}
 
 	req.Header.Add("Content-Type", "application/json")
@@ -202,22 +222,21 @@ func (s *Session) StartArchiving(archiveVideo bool, archiveAudio bool, ctx ...co
 	res, err := client(ctx[0]).Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return "", err
+		return archive, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
 		bodyBytes, _ := ioutil.ReadAll(res.Body)
 		stringResponse := string(bodyBytes)
-		return "", fmt.Errorf("Tokbox returns error code: %v. Message: %s", res.StatusCode, stringResponse)
+		return archive, fmt.Errorf("Tokbox returns error code: %v. Message: %s", res.StatusCode, stringResponse)
 	}
 
-	var response map[string]string
-	if err = json.NewDecoder(res.Body).Decode(&response); err != nil {
-		return "", err
+	if err = json.NewDecoder(res.Body).Decode(&archive); err != nil {
+		return archive, err
 	}
 
-	return response["id"], nil
+	return archive, nil
 }
 
 // Token to crate json web token
