@@ -29,6 +29,7 @@ const (
 	apiHost              = "https://api.opentok.com"
 	apiSession           = "/session/create"
 	apiStartArchivingURL = "/v2/project/%s/archive"
+	apiStopArchivingURL  = "/v2/project/%s/archive/%s/stop"
 )
 
 // MediaMode is the mode of media
@@ -88,20 +89,21 @@ type Session struct {
 
 // Archive struct represents archive create response
 type Archive struct {
-	CreatedAt  int    `json:"createdAt"`
-	Duration   int    `json:"duration"`
-	HasAudio   bool   `json:"hasAudio"`
-	HasVideo   bool   `json:"hasVideo"`
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	OutputMode string `json:"outputMode"`
-	ProjectID  int    `json:"projectId"`
-	Reason     string `json:"reason"`
-	Resolution string `json:"resolution"`
-	SessionID  string `json:"sessionId"`
-	Size       int    `json:"side"`
-	Status     string `json:"status"`
-	URL        string `json:"url"`
+	CreatedAt  int      `json:"createdAt"`
+	Duration   int      `json:"duration"`
+	HasAudio   bool     `json:"hasAudio"`
+	HasVideo   bool     `json:"hasVideo"`
+	ID         string   `json:"id"`
+	Name       string   `json:"name"`
+	OutputMode string   `json:"outputMode"`
+	ProjectID  int      `json:"projectId"`
+	Reason     string   `json:"reason"`
+	Resolution string   `json:"resolution"`
+	SessionID  string   `json:"sessionId"`
+	Size       int      `json:"side"`
+	Status     string   `json:"status"`
+	URL        string   `json:"url"`
+	S          *Session `json:"-"`
 }
 
 // New creates a new tokbox instance
@@ -190,7 +192,7 @@ func (t *Tokbox) NewSession(location string, mm MediaMode, am ArchiveMode, ctx .
 }
 
 // StartArchiving starts archiving session
-func (s *Session) StartArchiving(archiveVideo bool, archiveAudio bool, ctx ...context.Context) (Archive, error) {
+func (s *Session) StartArchiving(archiveVideo bool, archiveAudio bool, ctx ...context.Context) (*Archive, error) {
 	var archive Archive
 
 	values := map[string]interface{}{
@@ -203,13 +205,13 @@ func (s *Session) StartArchiving(archiveVideo bool, archiveAudio bool, ctx ...co
 	url := fmt.Sprintf(apiHost+apiStartArchivingURL, s.T.apiKey)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return archive, err
+		return nil, err
 	}
 
-	//Create jwt token
+	// Create jwt token
 	jwt, err := s.T.jwtToken()
 	if err != nil {
-		return archive, err
+		return nil, err
 	}
 
 	req.Header.Add("Content-Type", "application/json")
@@ -222,21 +224,66 @@ func (s *Session) StartArchiving(archiveVideo bool, archiveAudio bool, ctx ...co
 	res, err := client(ctx[0]).Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return archive, err
+		return nil, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
 		bodyBytes, _ := ioutil.ReadAll(res.Body)
 		stringResponse := string(bodyBytes)
-		return archive, fmt.Errorf("Tokbox returns error code: %v. Message: %s", res.StatusCode, stringResponse)
+		return nil, fmt.Errorf("Tokbox returns error code: %v. Message: %s", res.StatusCode, stringResponse)
 	}
 
 	if err = json.NewDecoder(res.Body).Decode(&archive); err != nil {
-		return archive, err
+		return nil, err
 	}
 
-	return archive, nil
+	archive.S = s
+	return &archive, nil
+}
+
+// StopArchiving stops current archive
+func (archive *Archive) StopArchiving(ctx ...context.Context) (*Archive, error) {
+	var response Archive
+
+	url := fmt.Sprintf(apiHost+apiStopArchivingURL, archive.S.T.apiKey, archive.ID)
+	req, err := http.NewRequest("POST", url, bytes.NewBufferString(""))
+	if err != nil {
+		return nil, err
+	}
+
+	// Create jwt token
+	jwt, err := archive.S.T.jwtToken()
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("X-OPENTOK-AUTH", jwt)
+
+	if len(ctx) == 0 {
+		ctx = append(ctx, nil)
+	}
+
+	res, err := client(ctx[0]).Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		bodyBytes, _ := ioutil.ReadAll(res.Body)
+		stringResponse := string(bodyBytes)
+		return nil, fmt.Errorf("Tokbox returns error code: %v. Message: %s", res.StatusCode, stringResponse)
+	}
+
+	if err = json.NewDecoder(res.Body).Decode(&response); err != nil {
+		return nil, err
+	}
+
+	response.S = archive.S
+	return &response, nil
 }
 
 // Token to crate json web token

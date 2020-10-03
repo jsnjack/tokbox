@@ -52,3 +52,32 @@ func TestStartArchiving(t *testing.T) {
 		}
 	}
 }
+
+func TestStopArchiving(t *testing.T) {
+	tokbox := New(key, secret)
+	session, err := tokbox.NewSession("", MediaRouter, ManualArchive)
+	if err != nil {
+		log.Fatal(err)
+		t.FailNow()
+	}
+	log.Println("Session: ", session)
+
+	archive := Archive{
+		ID: "123-456-789",
+		S:  session,
+	}
+
+	_, err2 := archive.StopArchiving()
+	if err2 != nil {
+		// We should receive 404 here as no clients are connected to the session
+		if !strings.Contains(fmt.Sprintln(err2), "404") {
+			log.Fatal("Erorr message doesn't contain '404' string")
+			t.FailNow()
+		}
+
+		if !strings.Contains(fmt.Sprintln(err2), "invalid archive ID.") {
+			log.Fatal("Erorr message doesn't contain 'No clients are actively connected to the OpenTok session' string")
+			t.FailNow()
+		}
+	}
+}
