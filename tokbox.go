@@ -306,12 +306,16 @@ func (s *Session) StartLiveCaptions(languageCode string, maxDuration int, partia
 	}
 
 	values := map[string]interface{}{
-		"sessionId":         s.SessionID,
-		"token":             token,
-		"languageCode":      languageCode,
-		"maxDuration":       maxDuration,
-		"partialCaptions":   partialCaptions,
-		"statusCallbackUrl": statusCallbackURL,
+		"sessionId":       s.SessionID,
+		"token":           token,
+		"languageCode":    languageCode,
+		"partialCaptions": partialCaptions,
+	}
+	if statusCallbackURL != "" {
+		values["statusCallbackUrl"] = statusCallbackURL
+	}
+	if maxDuration != 0 {
+		values["maxDuration"] = maxDuration
 	}
 	jsonValue, _ := json.Marshal(values)
 
