@@ -345,7 +345,7 @@ func (s *Session) StartLiveCaptions(languageCode string, maxDuration int, partia
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
+	if res.StatusCode != 202 {
 		bodyBytes, err := io.ReadAll(res.Body)
 		if err != nil {
 			return nil, err
@@ -389,7 +389,7 @@ func (s *Session) StopLiveCaptions(captionsId string, ctx ...context.Context) er
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
+	if res.StatusCode != 202 {
 		bodyBytes, err := io.ReadAll(res.Body)
 		if err != nil {
 			return err
