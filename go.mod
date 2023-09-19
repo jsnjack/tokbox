@@ -1,4 +1,4 @@
-module tokbox
+module github.com/jsnjack/tokbox
 
 go 1.16
 
