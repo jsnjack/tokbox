@@ -81,13 +81,14 @@ type Tokbox struct {
 
 // Session tokbox session
 type Session struct {
-	SessionID      string  `json:"session_id"`
-	ProjectID      string  `json:"project_id"`
-	PartnerID      string  `json:"partner_id"`
-	CreateDt       string  `json:"create_dt"`
-	SessionStatus  string  `json:"session_status"`
-	MediaServerURL string  `json:"media_server_url"`
-	T              *Tokbox `json:"-"`
+	SessionID             string  `json:"session_id"`
+	ProjectID             string  `json:"project_id"`
+	PartnerID             string  `json:"partner_id"`
+	CreateDt              string  `json:"create_dt"`
+	SessionStatus         string  `json:"session_status"`
+	MediaServerURL        string  `json:"media_server_url"`
+	LiveCaptionsActivated bool    `json:"live_captions_activated"`
+	T                     *Tokbox `json:"-"`
 }
 
 // Archive struct represents archive create response
@@ -354,6 +355,8 @@ func (s *Session) StartLiveCaptions(languageCode string, maxDuration int, partia
 		return nil, fmt.Errorf("Tokbox returns error code: %v. Message: %s", res.StatusCode, stringResponse)
 	}
 
+	s.LiveCaptionsActivated = true
+
 	if err = json.NewDecoder(res.Body).Decode(&lc); err != nil {
 		return nil, err
 	}
@@ -397,6 +400,8 @@ func (s *Session) StopLiveCaptions(captionsId string, ctx ...context.Context) er
 		stringResponse := string(bodyBytes)
 		return fmt.Errorf("Tokbox returns error code: %v. Message: %s", res.StatusCode, stringResponse)
 	}
+
+	s.LiveCaptionsActivated = false
 
 	return nil
 }
