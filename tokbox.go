@@ -2,6 +2,7 @@ package tokbox
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -26,10 +27,12 @@ import (
 )
 
 const (
-	apiHost              = "https://api.opentok.com"
-	apiSession           = "/session/create"
-	apiStartArchivingURL = "/v2/project/%s/archive"
-	apiStopArchivingURL  = "/v2/project/%s/archive/%s/stop"
+	apiHost                 = "https://api.opentok.com"
+	apiSession              = "/session/create"
+	apiStartArchivingURL    = "/v2/project/%s/archive"
+	apiStopArchivingURL     = "/v2/project/%s/archive/%s/stop"
+	apiStartLiveCaptionsURL = "/v2/project/%s/captions"
+	apiStopLiveCaptionsURL  = "/v2/project/%s/captions/%s/stop"
 )
 
 // MediaMode is the mode of media
@@ -103,6 +106,12 @@ type Archive struct {
 	Size       int      `json:"side"`
 	Status     string   `json:"status"`
 	URL        string   `json:"url"`
+	S          *Session `json:"-"`
+}
+
+// LiveCaptions struct represents live captions start response
+type LiveCaptions struct {
+	CaptionsId string   `json:"captionsId"`
 	S          *Session `json:"-"`
 }
 
@@ -284,6 +293,108 @@ func (archive *Archive) StopArchiving(ctx ...context.Context) (*Archive, error) 
 
 	response.S = archive.S
 	return &response, nil
+}
+
+// StartLiveCaptions starts live captions (https://tokbox.com/developer/rest/#starting-live-captions)
+func (s *Session) StartLiveCaptions(languageCode string, maxDuration int, partialCaptions bool, statusCallbackURL string, ctx ...context.Context) (*LiveCaptions, error) {
+	var lc LiveCaptions
+
+	// create a token
+	token, err := s.Token(Moderator, "", 24*60*60) //type publisher, no connection data, expire in 24 hours
+	if err != nil {
+		return nil, err
+	}
+
+	values := map[string]interface{}{
+		"sessionId":         s.SessionID,
+		"token":             token,
+		"languageCode":      languageCode,
+		"maxDuration":       maxDuration,
+		"partialCaptions":   partialCaptions,
+		"statusCallbackUrl": statusCallbackURL,
+	}
+	jsonValue, _ := json.Marshal(values)
+
+	url := fmt.Sprintf(apiHost+apiStartLiveCaptionsURL, s.T.apiKey)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonValue))
+	if err != nil {
+		return nil, err
+	}
+
+	// Create jwt token
+	jwt, err := s.T.jwtToken()
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("X-OPENTOK-AUTH", jwt)
+
+	if len(ctx) == 0 {
+		ctx = append(ctx, nil)
+	}
+
+	res, err := client(ctx[0]).Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		bodyBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			return nil, err
+		}
+		stringResponse := string(bodyBytes)
+		return nil, fmt.Errorf("Tokbox returns error code: %v. Message: %s", res.StatusCode, stringResponse)
+	}
+
+	if err = json.NewDecoder(res.Body).Decode(&lc); err != nil {
+		return nil, err
+	}
+
+	lc.S = s
+	return &lc, nil
+}
+
+func (s *Session) StopLiveCaptions(captionsId string, ctx ...context.Context) error {
+	url := fmt.Sprintf(apiHost+apiStopLiveCaptionsURL, s.T.apiKey, captionsId)
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		return err
+	}
+
+	// Create jwt token
+	jwt, err := s.T.jwtToken()
+	if err != nil {
+		return err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("X-OPENTOK-AUTH", jwt)
+
+	if len(ctx) == 0 {
+		ctx = append(ctx, nil)
+	}
+
+	res, err := client(ctx[0]).Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		bodyBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+		stringResponse := string(bodyBytes)
+		return fmt.Errorf("Tokbox returns error code: %v. Message: %s", res.StatusCode, stringResponse)
+	}
+
+	return nil
 }
 
 // Token to crate json web token
