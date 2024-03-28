@@ -2,7 +2,7 @@ package tokbox
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -124,7 +124,7 @@ func (t *Tokbox) jwtToken() (string, error) {
 			Issuer:    t.apiKey,
 			IssuedAt:  time.Now().UTC().Unix(),
 			ExpiresAt: time.Now().UTC().Unix() + (2 * 24 * 60 * 60), // 2 hours; //NB: The maximum allowed expiration time range is 5 minutes.
-			Id:        uuid.NewV4().String(),
+			Id:        uuid.NewString(),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -229,7 +229,7 @@ func (s *Session) StartArchiving(archiveVideo bool, archiveAudio bool, ctx ...co
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		bodyBytes, _ := ioutil.ReadAll(res.Body)
+		bodyBytes, _ := io.ReadAll(res.Body)
 		stringResponse := string(bodyBytes)
 		return nil, fmt.Errorf("Tokbox returns error code: %v. Message: %s", res.StatusCode, stringResponse)
 	}
@@ -273,7 +273,7 @@ func (archive *Archive) StopArchiving(ctx ...context.Context) (*Archive, error) 
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		bodyBytes, _ := ioutil.ReadAll(res.Body)
+		bodyBytes, _ := io.ReadAll(res.Body)
 		stringResponse := string(bodyBytes)
 		return nil, fmt.Errorf("Tokbox returns error code: %v. Message: %s", res.StatusCode, stringResponse)
 	}
