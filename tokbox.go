@@ -22,7 +22,7 @@ import (
 	"golang.org/x/net/context"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/myesui/uuid"
+	"github.com/google/uuid"
 )
 
 const (
