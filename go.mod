@@ -1,4 +1,4 @@
-module tokbox
+module github.com/aogz/tokbox
 
 go 1.21
 
